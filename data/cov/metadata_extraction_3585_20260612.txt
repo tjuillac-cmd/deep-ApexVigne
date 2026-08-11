@@ -1,0 +1,64 @@
+Projet SICLIMA d'extraction de données : DeepMaxent
+Numéro du projet SICLIMA d'extraction de données : 3585
+Date de création : 12/06/2026 15:51:03
+Date d'exécution : 12/06/2026 15:51:14
+Version de SICLIMA : 1.2.6
+-----------------------------------------------------------------------------------------------------------
+Source des données climatiques :
+  Base climatique     : SAFRAN
+  Modèle climatique   : SAFRAN
+  Scénario climatique : SAFRAN
+-----------------------------------------------------------------------------------------------------------
+  Avertissements sur la base climatique :
+
+Les données SAFRAN sont réactualisées en continu par Météo-France :
+
+* une ré-analyse est effectuée en fin d’année hydrologique, c’est-à-dire à partir du 1er août,
+* une ré-analyse est effectuée tous les mois sur le mois précédent.
+
+Les données de 2023 ne sont pas encore consolidées, elles sont donc encore susceptibles de modifications par Météo-France.
+
+Les données sont livrées telles que reçues de Météo-France en janvier 2024.
+
+-----------------------------------------------------------------------------------------------------------
+Période d'extraction : 2019 - 2025
+-----------------------------------------------------------------------------------------------------------
+Numéros des 794 mailles sélectionnées :
+6820, 6902-6907, 6983-6989, 7063-7070, 7141-7151, 7219-7230, 7299-7311, 7381-7394, 7463-7479, 7546-7564,
+7628-7645, 7711-7727, 7793-7807, 7875-7889, 7958-7974, 8043-8059, 8134-8150, 8219, 8222-8240, 8310-8331,
+8403-8423, 8493-8515, 8583-8607, 8615-8617, 8671-8697, 8699, 8702-8708, 8761-8798, 8845, 8847-8887, 8934-8976,
+9022-9062, 9104, 9106, 9108-9119, 9121-9141, 9179-9197, 9202-9204, 9207-9218, 9255-9273, 9276-9288, 9323-9337,
+9342-9349, 9389-9401, 9403, 9405-9406, 9446-9457, 9494-9504, 9536-9546, 9580-9590, 9622-9632, 9666-9674,
+9696-9706, 9720-9733, 9748-9762, 9777-9779, 9781-9785, 9800, 9803-9805
+-----------------------------------------------------------------------------------------------------------
+Choix des variables climatiques : fichier CSV avec sélection des variables
+-----------------------------------------------------------------------------------------------------------
+Entêtes des colonnes :
+cell            Numéro de maille
+year            Année
+month           Mois
+day_of_month    Jour du mois
+day_of_year     Jour de l’année
+-----------------------------------------------------------------------------------------------------------
+Variables climatiques (16 variables sélectionnées) :
+Nom             Unité    Description
+--------------- -------- ----------------------------------------------------------------------------------
+dli_q           J/cm²    Rayonnement atmosphérique (cumul quotidien).
+t_q             °C       Température moyenne des 24 températures horaires (01-00 UTC).
+co2             ppm      Concentration de CO2.
+drainc_q        mm       Drainage (cumul quotidien 06-06 UTC).
+pe_q            mm       Pluies efficaces (cumul quotidien).
+preliq_q        mm       Précipitations liquides (cumul quotidien 06-06 UTC).
+wg_racine_q     m³/m³    Contenu en eau liquide dans la couche racinaire à 06 UTC.
+tsup_h_q        °C       Température maximale des 24 températures horaires (19-18 UTC).
+tinf_h_q        °C       Température minimale des 24 températures horaires (07-06 UTC).
+etp_q           mm       Evapotranspiration potentielle (formule de Penman-Monteith).
+etppm           mm       Evapotranspiration potentielle calculée par SICLIMA (formule de Penman-Monteith).
+evap_q          mm       Evapotranspiration réelle (cumul quotidien 06-06 UTC).
+hu_q            %        Humidité relative (moyenne quotidienne).
+runc_q          mm       Ruissellement (cumul quotidien 06-06 UTC).
+swi_q           %        Indice d’humidité des sols (moyenne quotidienne 06-06 UTC).
+q_q             g/kg     Humidité spécifique (moyenne quotidienne).
+-----------------------------------------------------------------------------------------------------------
+Nombre de données (mailles x jours x variables) : 32484128
+-----------------------------------------------------------------------------------------------------------

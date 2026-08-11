@@ -1,0 +1,251 @@
+---
+title: "Visualisation des covariables"
+author: "Thomas JUILLAC"
+date: "2026-05-12"
+output: html_document
+---
+
+## Librairies
+
+```{r setup, include=FALSE}
+library(sf)
+library(tidyverse)
+library(mapview)
+```
+
+## Importation des données
+
+```{r}
+# Charger le GeoPackage
+df <- st_read("covariables_updated.gpkg")
+
+# Aperçu
+glimpse(df)
+summary(df)
+```
+
+## Distribution de l'altitude
+
+```{r altitude, fig.width=8, fig.height=5}
+df %>%
+  st_drop_geometry() %>%
+  ggplot(aes(x = alt)) +
+  geom_histogram(bins = 30, fill = "steelblue", color = "white") +
+  theme_minimal() +
+  labs(title = "Distribution de l'altitude", x = "Altitude (m)", y = "Fréquence")
+```
+
+Distribution logique en regard de la zone étudiée (arc méditerranéen). Large gamme d'altitudes présentes dans la zone étudiée, un paramètre qui semble pertinent à première vue.
+
+```{r}
+df %>%
+  st_drop_geometry() %>%
+  summarise(
+    min = min(alt, na.rm = TRUE),
+    mean = mean(alt, na.rm = TRUE),
+    median = median(alt, na.rm = TRUE),
+    max = max(alt, na.rm = TRUE),
+    sd = sd(alt, na.rm = TRUE)
+  )
+```
+
+Altitude min de -11m (!) où ça ?
+
+## Carte de l'altitude
+```{r carte_altitude}
+grille_alt <- st_make_grid(df, cellsize = 5000, square = TRUE) %>%
+  st_sf(id_cellule = seq_along(.)) %>%
+  st_join(df) %>%
+  group_by(id_cellule) %>%
+  summarise(alt_moy = mean(alt, na.rm = TRUE),
+            n = n()) %>%
+  filter(!is.na(alt_moy))
+
+mapview(grille_alt,
+        zcol = "alt_moy",
+        layer.name = "Altitude moyenne (m)",
+        col.regions = colorRampPalette(c("#336600", "#ffff99", "#cc6600", "#ffffff")),
+        alpha.regions = 1,
+        lwd = 0,
+        legend = TRUE)
+```
+
+## Effectifs par classe de RU
+
+```{r effectifs_ru, fig.width=8, fig.height=5}
+df %>%
+  st_drop_geometry() %>%
+  mutate(ru_label = factor(ru,
+    levels = c(1, 2, 3, 4, 5, 9),
+    labels = c("< 50 mm", "50-100 mm", "100-150 mm",
+               "150-200 mm", "≥ 200 mm", "Non-sols"))) %>%
+  count(ru_label) %>%
+  ggplot(aes(x = ru_label, y = n, fill = ru_label)) +
+  geom_bar(stat = "identity", color = "white", show.legend = FALSE) +
+  geom_text(aes(label = n), vjust = -0.5, size = 4) +
+  theme_minimal() +
+  labs(title = "Effectifs par classe de RU",
+       x = "Classe de RU", y = "Nombre de points")
+```
+
+Les classes les plus "sèches" dominent largement, ce qui encore une fois n'est pas très étonnant en regard de la zone d'étude. On constate quand même que la population est répartie sur 4 classes en majorité, ce qui représentent une large diversité de sol, cette covariable semble aussi pertinente.
+
+## Représentation spatiale de la RU
+
+```{r carte_ru}
+grille_ru <- st_make_grid(df, cellsize = 5000, square = TRUE) %>%
+  st_sf(id_cellule = seq_along(.)) %>%
+  st_join(df) %>%
+  group_by(id_cellule) %>%
+  summarise(ru_moy = mean(ru, na.rm = TRUE),
+            n = n()) %>%
+  filter(!is.na(ru_moy))
+
+mapview(grille_ru,
+        zcol = "ru_moy",
+        layer.name = "RU moyenne",
+        col.regions = colorRampPalette(c("#d7191c", "#fdae61", "#ffffbf", "#a6d96a", "#1a9641")),
+        alpha.regions = 1,
+        lwd = 0,
+        legend = TRUE)
+```
+
+## Distribution du CWB par année
+
+```{r cwb_distribution, fig.width=12, fig.height=8}
+df %>%
+  st_drop_geometry() %>%
+  select(starts_with("cwb")) %>%
+  pivot_longer(everything(), names_to = "annee", values_to = "cwb") %>%
+  mutate(annee = gsub("cwb_", "", annee)) %>%
+  ggplot(aes(x = cwb, fill = annee)) +
+  geom_histogram(bins = 30, color = "white", show.legend = FALSE) +
+  facet_wrap(~annee, scales = "free_y") +
+  theme_minimal() +
+  labs(title = "Distribution du CWB par année",
+       x = "CWB", y = "Fréquence")
+```
+
+```{r cwb_density, fig.width=9, fig.height=5}
+df %>%
+  st_drop_geometry() %>%
+  select(starts_with("cwb")) %>%
+  pivot_longer(everything(), names_to = "annee", values_to = "cwb") %>%
+  mutate(annee = gsub("cwb_", "", annee)) %>%
+  ggplot(aes(x = cwb, fill = annee, color = annee)) +
+  geom_density(alpha = 0.2, linewidth = 1) +
+  theme_minimal() +
+  labs(title = "Densité de la CWB par année",
+       x = "CWB", y = "Densité", fill = "Année", color = "Année")
+```
+
+On observe une diversité aussi bien intra-annuelle qu'inter-annuelle. Je n'ai pas en tête quelles années ont été particulièrement sèches ou particulièrement humides mais à regarder. L'année 2025 a-t-elle été particulièrement humide ? Bizarre elle paraît très différente des autres années et comme j'ai fait le raster à la main peut-être y a-t-il une erreur.
+
+## Stats descriptives du CWB par année et toutes années confondues
+
+```{r}
+df %>%
+  st_drop_geometry() %>%
+  select(starts_with("cwb")) %>%
+  pivot_longer(everything(), names_to = "annee", values_to = "cwb") %>%
+  mutate(annee = gsub("cwb_", "", annee)) %>%
+  bind_rows(
+    df %>%
+      st_drop_geometry() %>%
+      select(starts_with("cwb")) %>%
+      pivot_longer(everything(), names_to = "annee", values_to = "cwb") %>%
+      mutate(annee = "Toutes années")
+  ) %>%
+  group_by(annee) %>%
+  summarise(
+    N        = sum(!is.na(cwb)),
+    Moyenne  = mean(cwb, na.rm = TRUE),
+    Médiane  = median(cwb, na.rm = TRUE),
+    Écart_type = sd(cwb, na.rm = TRUE),
+    Min      = min(cwb, na.rm = TRUE),
+    Max      = max(cwb, na.rm = TRUE),
+    Q1       = quantile(cwb, 0.25, na.rm = TRUE),
+    Q3       = quantile(cwb, 0.75, na.rm = TRUE),
+    .groups  = "drop"
+  ) %>%
+  mutate(across(where(is.numeric), \(x) round(x, 3))) %>%
+  arrange(annee) %>%
+  knitr::kable(caption = "Statistiques descriptives de la CWB par année et toutes années confondues")
+```
+
+## Distribution du CWB toutes années confondues
+
+```{r cwb_global, fig.width=8, fig.height=5}
+df %>%
+  st_drop_geometry() %>%
+  select(starts_with("cwb")) %>%
+  pivot_longer(everything(), names_to = "annee", values_to = "cwb") %>%
+  ggplot(aes(x = cwb)) +
+  geom_histogram(bins = 30, fill = "steelblue", color = "white") +
+  theme_minimal() +
+  labs(title = "Distribution du CWB toutes années confondues",
+       x = "CWB", y = "Fréquence")
+```
+
+```{r cwb_stats}
+df %>%
+  st_drop_geometry() %>%
+  select(starts_with("cwb")) %>%
+  pivot_longer(everything(), names_to = "annee", values_to = "cwb") %>%
+  summarise(
+    min    = min(cwb, na.rm = TRUE),
+    mean   = mean(cwb, na.rm = TRUE),
+    median = median(cwb, na.rm = TRUE),
+    max    = max(cwb, na.rm = TRUE),
+    sd     = sd(cwb, na.rm = TRUE)
+  )
+```
+
+## Carte des zones où CWB \> 0 (2025)
+
+```{r}
+df %>%
+  filter(cwb2025 > 0) %>%
+  mapview(zcol = "cwb2025",
+          layer.name = "CWB 2025 > 0",
+          col.regions = colorRampPalette(c("#ffffbf", "#1a9641")),
+          alpha.regions = 0.8,
+          legend = TRUE)
+```
+
+## Représentation spatiale de la CWB
+
+```{r}
+## Paramètre : choisir "mean" ou une année ex "cwb_2025"
+annee_choisie <- "cwb2025"  # <- modifier ici si besoin
+
+# Création de la grille sur l'emprise du df
+grille <- st_make_grid(df, cellsize = 5000, square = TRUE) %>%
+  st_sf(id_cellule = seq_along(.))
+
+# Calcul du CWB selon le choix
+if (annee_choisie == "mean") {
+  df_cwb <- df %>%
+    mutate(cwb_val = rowMeans(across(starts_with("cwb")), na.rm = TRUE))
+  layer_name <- "CWB moyen (toutes années)"
+} else {
+  df_cwb <- df %>%
+    mutate(cwb_val = .data[[annee_choisie]])
+  layer_name <- paste("CWB", gsub("cwb_", "", annee_choisie))
+}
+
+# Jointure spatiale points -> grille
+grille_cwb <- grille %>%
+  st_join(df_cwb) %>%
+  group_by(id_cellule) %>%
+  summarise(cwb_moy = mean(cwb_val, na.rm = TRUE),
+            n = n()) %>%
+  filter(!is.na(cwb_moy))
+
+mapview(grille_cwb,
+        zcol = "cwb_moy",
+        layer.name = layer_name,
+        alpha.regions = 1,
+        col.regions = colorRampPalette(c("red", "orange", "yellow", "green")),
+        lwd = 0)
+```
