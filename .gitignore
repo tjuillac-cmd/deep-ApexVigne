@@ -221,3 +221,4 @@ __marimo__/
 data/cov/
 archives/
 *.csv
+lfs_pull_log.txt
