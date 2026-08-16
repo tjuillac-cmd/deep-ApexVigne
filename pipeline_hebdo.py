@@ -16,7 +16,7 @@ import papermill as pm
 from datetime import datetime, timedelta
 from pathlib import Path
 
-NOTEBOOK_PATH = "model_apex8.ipynb"
+NOTEBOOK_PATH = "deepApex-Vigne.ipynb"
 
 # deux variantes à exécuter, valeurs attendues par la cellule taggée "parameters"
 MODEL_TAGS = ["classique", "degrade"]
