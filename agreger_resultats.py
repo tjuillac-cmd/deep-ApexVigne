@@ -24,6 +24,7 @@ import pandas as pd
 # --- Doit être le même dossier que PROJECT_DIR dans 2_run_weekly_pipeline.py ---
 PROJECT_DIR = Path(r"C:\Users\juillact\Documents\deep-ApexVigne")
 
+
 DATE_DEBUT = datetime(2025, 6, 16)
 DATE_FIN_LIMITE = datetime(2025, 8, 17)
 
@@ -45,7 +46,7 @@ def build_week_row(date_debut_str, export_data):
         "nb_cell": df_summary["Nb cellules observées"].iloc[0],
     }
     for metric_col, prefix in METRICS:
-        vals = df_summary[metric_col]  # déjà trié par Kendall tau décroissant en amont
+        vals = df_summary[metric_col]
         for rank in [1, 2, 3]:
             pos = rank - 1
             row[f"{prefix}_top{rank}"] = vals.iloc[pos] if pos < len(vals) else np.nan
@@ -54,6 +55,9 @@ def build_week_row(date_debut_str, export_data):
         row[f"{prefix}_std"] = valid.std() if len(valid) else np.nan
     row["ic_apex_moy"] = export_data["ic_apex_moy"]
     row["std_ic_apex"] = export_data["std_ic_apex"]
+    # comparaison IDW
+    row["auc_idw"] = export_data.get("auc_idw", np.nan)
+    row["kendall_idw"] = export_data.get("kendall_idw", np.nan)
     return row
 
 
@@ -62,7 +66,7 @@ def aggregate(tag, results_dir="results"):
     for date_debut_str in semaines:
         path = Path(results_dir) / f"{tag}_{date_debut_str}.pkl"
         if not path.exists():
-            print(f"⚠️ Résultat manquant, semaine ignorée : {path}")
+            print(f"Résultat manquant, semaine ignorée : {path}")
             continue
         with open(path, "rb") as f:
             export_data = pickle.load(f)
@@ -71,7 +75,7 @@ def aggregate(tag, results_dir="results"):
 
 
 def write_sheet(writer, df, sheet_name):
-    """Écrit le DataFrame avec un double en-tête groupé, comme le fichier original."""
+    """Écrit le DataFrame"""
     df.to_excel(writer, sheet_name=sheet_name, startrow=2, header=False, index=False)
     ws = writer.sheets[sheet_name]
 
@@ -80,12 +84,14 @@ def write_sheet(writer, df, sheet_name):
         + ["AUC-ROC"] + [""] * 4
         + ["Kendall tau"] + [""] * 4
         + ["iC-apex", ""]
+        + ["IDW", ""]
     )
     subheaders = (
         ["date_deb", "date_fin", "nb_obs", "nb_cell"]
         + ["top1", "top2", "top3", "moy", "std"]
         + ["top1", "top2", "top3", "moy", "std"]
         + ["ic_apex_moy", "std_ic_apex"]
+        + ["auc_idw", "kendall_idw"]
     )
     for col_idx, (g, s) in enumerate(zip(groups, subheaders), start=1):
         ws.cell(row=1, column=col_idx, value=g)
@@ -95,11 +101,11 @@ def write_sheet(writer, df, sheet_name):
 df_classique = aggregate("classique")
 df_degrade = aggregate("degrade")
 
-output_path = "resultats_hebdo.xlsx"
+output_path = "results/resultats_hebdo.xlsx"
 with pd.ExcelWriter(output_path, engine="openpyxl") as writer:
     write_sheet(writer, df_classique, "modele")
     write_sheet(writer, df_degrade, "modele_degrade")
 
-print(f"\n✅ Export terminé : {output_path}")
+print(f"\nExport terminé : {output_path}")
 print(f"  - {len(df_classique)}/{len(semaines)} semaines pour le modèle classique")
 print(f"  - {len(df_degrade)}/{len(semaines)} semaines pour le modèle dégradé")
