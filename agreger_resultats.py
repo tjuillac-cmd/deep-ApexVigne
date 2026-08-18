@@ -39,9 +39,12 @@ METRICS = [("AUC-ROC", "auc"), ("Kendall tau", "kt")]
 
 def build_week_row(date_debut_str, export_data):
     df_summary = export_data["df_summary"]
+    date_debut = pd.to_datetime(date_debut_str)
+    date_fin = date_debut + pd.Timedelta(days=6)
+    date_fin_str = date_fin.strftime("%Y-%m-%d")
     row = {
-        "date_deb": pd.to_datetime(date_debut_str),
-        "date_fin": pd.to_datetime(date_debut_str) + pd.Timedelta(days=6),
+        "date_deb": date_debut_str,
+        "date_fin": date_fin_str,
         "nb_obs": df_summary["Nb observations"].iloc[0],
         "nb_cell": df_summary["Nb cellules observées"].iloc[0],
     }
